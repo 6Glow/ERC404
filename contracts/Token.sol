@@ -63,6 +63,63 @@ contract NFTMintDN404 is DN404, ERC20Permit, Ownable {
         numMinted += amount;
         _mint(msg.sender, amount);
     }
+
+    function setBaseURI(string calldata  baseURI) public onlyOwner {
+      _baseURI = baseURI;
+    }
+
+    function setPrices(uint120 publicPrice_, uint120 allowlistPrice_) public onlyOwner {
+      publicPrice = publicPrice_;
+      allowlistPrice = allowlistPrice_;
+    }
+
+    function toggleLive() public onlyOwner {
+      live = !live;
+    }
+
+    function withdraw() public onlyOwner {
+      SafeTransferLib.safeTransferAllETH(msg.sender);
+    }
+
+    function name() public view override returns (string memory) {
+      return _name;
+    }
+
+    function symbol() public view override returns(string memory) {
+      return _symbol;
+    }
+
+    function tokenURI(uint256 tokenId) public view override returns (string memory result) {
+      if(bytes(_baseURI).length != 0) {
+        result = string(abi.encodePacked(_baseURI, LibString.toString(tokenId)));
+      }
+    }
+
+    function setAllowlist(bytes32 allowlistRoot_) public onlyOwner {
+      allowlistRoot = allowlistRoot_;
+    }
+
+    function setAllowlistPrice(uint120 allowlistPrice_) public onlyOwner {
+      allowlistPrice = allowlistPrice_;
+    }
+
+    function nftTotalSupply() public view returns (uint256) {
+      return _totalNFTSupply();
+    }
+
+    function nftbalanceOf(address owner) public view returns (uint256) {
+        return _balanceOfNFT(owner);
+    }
+
+    function previewNextTokenId() public view returns (uint256) {
+        return _nextTokenId();
+    }
+
+    function getURI() public view returns(string memory) {
+        return _baseURI;
+    }
+
+
 }
 
 
