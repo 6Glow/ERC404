@@ -20,6 +20,4 @@ npx hardhat node
 npx hardhat run scripts/deploy.js
 ```
 # Build-a-Semi-Fungible-ERC404
-# Build-a-Semi-Fungible-ERC404
-# ERC404
-# ERC404
+
