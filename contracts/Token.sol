@@ -15,8 +15,8 @@ contract NFTMintDN404 is DN404, ERC20Permit, Ownable {
     string private _symbol;
     string private _baseURI;
     bytes32 private allowlistRoot;
-    uint120 public publicPrice;
-    uint120 public allowlistPrice;
+    uint256 public publicPrice;
+    uint256 public allowlistPrice;
     bool public live;
     uint256 public numMinted;
     uint256 public MAX_SUPPLY;
@@ -26,41 +26,61 @@ contract NFTMintDN404 is DN404, ERC20Permit, Ownable {
     error ExceedsMaxMint();
     error TotalSupplyReached();
     error NotLive();
-
+    
     modifier isValidMint(uint256 price, uint256 amount) {
-        require(live, "NotLive");
-        require(price * amount == msg.value, "InvalidPrice");
-        require(numMinted + amount <= MAX_SUPPLY, "TotalSupplyReached");
+        if (!live) {
+            revert NotLive();
+        }
+        if (price * amount != msg.value) {
+            revert InvalidPrice();
+        }
+        if (numMinted + amount > MAX_SUPPLY) {
+            revert TotalSupplyReached();
+        }
         _;
     }
 
     constructor(
         string memory name_,
         string memory symbol_,
+        string memory uri_,
         uint256 _MAX_SUPPLY,
-        uint120 publicPrice_,
-        uint96 initialTokenSupply,
-        address initialSupplyOwner
-    ) ERC20Permit("NFTMintDN404") {
-        _initializeOwner(msg.sender);
+        uint256 publicPrice_,
+        uint256 initialTokenSupply,
+        address _owner
+    ) ERC20Permit("ERC404Token") {
+        _initializeOwner(_owner);
+
         _name = name_;
         _symbol = symbol_;
         MAX_SUPPLY = _MAX_SUPPLY;
         publicPrice = publicPrice_;
+        _baseURI = uri_;
+        live = true;
+
         address mirror = address(new DN404Mirror(msg.sender));
-        _initializeDN404(initialTokenSupply, initialSupplyOwner, mirror);
+        _initializeDN404(initialTokenSupply, _owner, mirror);
     }
 
     function mint(uint256 amount) public payable isValidMint(publicPrice, amount) {
-        numMinted += amount;
+      unchecked{
+        ++numMinted;
+      }
         _mint(msg.sender, amount);
     }
 
-    function allowlistMint(uint256 amount, bytes32[] calldata proof) public payable isValidMint(allowlistPrice, amount) {
-        if (!MerkleProofLib.verifyCalldata(proof, allowlistRoot, keccak256(abi.encodePacked(msg.sender)))) {
+    function allowlistMint(uint256 amount, bytes32[] calldata proof) public payable isValidMint(allowlistPrice, amount)
+    {
+        if (
+            !MerkleProofLib.verifyCalldata(
+                proof, allowlistRoot, keccak256(abi.encodePacked(msg.sender))
+            )
+        ) {
             revert InvalidProof();
         }
-        numMinted += amount;
+        unchecked {
+            ++numMinted;
+        }
         _mint(msg.sender, amount);
     }
 
@@ -74,7 +94,12 @@ contract NFTMintDN404 is DN404, ERC20Permit, Ownable {
     }
 
     function toggleLive() public onlyOwner {
-      live = !live;
+      if (live)
+      {
+          live = false;
+      } else {
+           live = true;
+      }
     }
 
     function withdraw() public onlyOwner {
